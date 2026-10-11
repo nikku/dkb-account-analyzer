@@ -7,6 +7,9 @@ Client-side account balance and spending analysis for your DKB account. Reads a 
 ## Build and Run
 
 ```sh
-# run locally (in DEV mode)
+# spin up development server
 npm run dev
+
+# execute all tests
+npm test
 ```
