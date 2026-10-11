@@ -364,7 +364,7 @@ describe('Offline browser application', () => {
     });
   });
 
-  it('shows latest-year extra totals in the same quick-figure layout with percentage changes only', async () => {
+  it('shows rolling 365-day extra totals against the preceding 365 days', async () => {
     // given
     await page.goto(`${url}?demo=1`);
     await page.locator('#extra-insights .insight').first().waitFor();
@@ -374,19 +374,43 @@ describe('Offline browser application', () => {
       const expense = document.querySelector('#extra-insights [data-kind="special"]');
       return {
         period: JSON.parse(expense.querySelector('.insight-value').dataset.hover).rows[0][1],
+        calculation: JSON.parse(expense.querySelector('.insight-value').dataset.hover).rows.find(row => row[0] === 'Calculation')[1],
+        coverage: JSON.parse(expense.querySelector('.insight-value').dataset.hover).rows.find(row => row[0] === 'Coverage')[1],
         label: expense.querySelector('.insight-heading > span').textContent,
         income: income.querySelector('.insight-value').textContent,
         expense: expense.querySelector('.insight-value').textContent,
         changes: Array.from(document.querySelectorAll('#extra-insights .change'), badge => badge.textContent),
-        comparison: JSON.parse(expense.querySelector('.change').dataset.hover).heading,
+        comparedWith: JSON.parse(expense.querySelector('.change').dataset.hover).rows.find(row => row[0] === 'Compared with')[1],
         figures: document.querySelectorAll('#extra-insights .insight strong').length,
         tables: document.querySelectorAll('#insights table').length
       };
     });
     // then
     assert.deepEqual(result, {
-      period: '01 Jan 2026 – 31 Oct 2026', label: 'Yearly extra expenses', income: '640,00 €',
-      expense: '3.093,00 €', changes: ['+0.4%', 'N/A'], comparison: 'Yearly extra expenses', figures: 2, tables: 0
+      period: '01 Nov 2025 – 31 Oct 2026', calculation: 'Total over 365 days', coverage: 'Full 365 days',
+      label: 'Yearly extra expenses', income: '1.840,00 €', expense: '3.513,00 €',
+      changes: ['+1.5%', '+60.0%'], comparedWith: '01 Nov 2024 – 31 Oct 2025', figures: 2, tables: 0
+    });
+  });
+
+  it('explains partial 365-day coverage and withholds comparison until export covers both periods', async () => {
+    // given
+    await upload();
+    // when
+    const result = await page.evaluate(() => {
+      const expense = document.querySelector('#extra-insights [data-kind="special"]');
+      const tooltip = JSON.parse(expense.querySelector('.insight-value').dataset.hover);
+      return {
+        period: tooltip.rows.find(row => row[0] === 'Period')[1],
+        calculation: tooltip.rows.find(row => row[0] === 'Calculation')[1],
+        coverage: tooltip.rows.find(row => row[0] === 'Coverage')[1],
+        comparison: expense.querySelector('.change')
+      };
+    });
+    // then
+    assert.deepEqual({ ...result, errors }, {
+      period: '11 Oct 2025 – 10 Oct 2026', calculation: 'Total over 365 days',
+      coverage: 'Partial; export starts 01 Jul 2026', comparison: null, errors: []
     });
   });
 
@@ -449,15 +473,14 @@ describe('Offline browser application', () => {
     const rows = await page.locator('#hover-panel .hover-row').evaluateAll(elements => elements.map(element => [element.firstElementChild.textContent, element.lastElementChild.textContent]));
     // then
     assert.deepEqual({ aligned, rows }, { aligned: true, rows: [
-      ['Period', '01 Jan 2026 – 31 Oct 2026'],
-      ['Calculation', 'Calendar-year total'],
-      ['Coverage', 'Partial year; only the dates shown'],
+      ['Period', '01 Nov 2025 – 31 Oct 2026'],
+      ['Calculation', 'Total over 365 days'],
+      ['Coverage', 'Full 365 days'],
       ['Extras', 'Non-recurring payments of 150,00 € or more'],
-      ['Current total', '640,00 €'],
-      ['Compared with', '01 Jan 2025 – 31 Oct 2025'],
-      ['Previous total', '0,00 €'],
-      ['Percentage', 'Unavailable; previous total is zero'],
-      ['Difference', '+640,00 €']
+      ['Current total', '1.840,00 €'],
+      ['Compared with', '01 Nov 2024 – 31 Oct 2025'],
+      ['Previous total', '1.150,00 €'],
+      ['Difference', '+690,00 €']
     ] });
   });
 

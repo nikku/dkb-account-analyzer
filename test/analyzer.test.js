@@ -413,52 +413,59 @@ describe('Trend', () => {
   });
 
   describe('Yearly extras', () => {
-    it('compares year-to-date totals with the same dates last year, excluding future seasonal extras', () => {
+    it('compares the latest 365 days with the preceding 365 days', () => {
       // given
       const data = A.parseExport(csv([
+        transaction('10.10.24', '-30', 'Garage'),
+        transaction('11.10.24', '-100', 'Garage'),
         transaction('01.01.25', '-10'),
         transaction('15.04.25', '-300', 'Garage'),
-        transaction('01.12.25', '-900', 'Garage'),
         transaction('05.05.25', '200', 'Shop', 'Gebucht', 'Refund'),
+        transaction('10.10.25', '-50', 'Garage'),
+        transaction('11.10.25', '-70', 'Garage'),
         transaction('15.04.26', '-450', 'Garage'),
         transaction('05.05.26', '500', 'Shop', 'Gebucht', 'Refund'),
-        transaction('10.10.26', '-900', 'Garage', 'Vorgemerkt')
+        transaction('10.10.26', '-900', 'Garage'),
+        transaction('11.10.26', '-900', 'Garage', 'Vorgemerkt')
       ]));
       // when
       const result = A.yearlyExtras(data);
       // then
       assert.deepEqual(result[0], {
-        year: 2026, start: A.parseDate('01.01.2026'), end: A.parseDate('11.10.2026'), complete: false,
-        extraIncome: 50000, special: 45000,
-        previous: { start: A.parseDate('01.01.2025'), end: A.parseDate('11.10.2025'), extraIncome: 20000, special: 30000 }
+        year: 2026, start: A.parseDate('11.10.2025'), end: A.parseDate('11.10.2026'), complete: true,
+        extraIncome: 50000, special: 135000,
+        previous: { start: A.parseDate('11.10.2024'), end: A.parseDate('11.10.2025'), extraIncome: 20000, special: 30000 }
       });
     });
 
-    it('marks partial earliest years and omits comparisons without full matching coverage', () => {
+    it('marks incomplete 365-day coverage and omits comparisons without two full periods', () => {
       // given
       const data = A.parseExport(csv([transaction('01.11.25', '-300', 'Garage'), transaction('01.04.26', '-500', 'Garage')]));
       // when
-      const result = A.yearlyExtras(data).map(period => [period.year, period.start, period.complete, period.previous]);
+      const result = A.yearlyExtras(data).map(period => [period.start, period.end, period.complete, period.previous]);
       // then
-      assert.deepEqual(result, [[2026, A.parseDate('01.01.2026'), false, null], [2025, A.parseDate('01.11.2025'), false, null]]);
+      assert.deepEqual(result, [[A.parseDate('11.10.2025'), A.parseDate('11.10.2026'), false, null]]);
     });
 
-    it('compares full years and retains zero-extra years', () => {
+    it('uses fixed 365-day periods across leap years', () => {
       // given
-      const data = A.parseExport(csv([transaction('01.01.24', '-10'), transaction('20.12.24', '-300', 'Garage')], '31.12.2025'));
+      const data = A.parseExport(csv([
+        transaction('02.03.22', '-10'),
+        transaction('01.03.23', '-300', 'Garage'),
+        transaction('02.03.23', '-500', 'Garage'),
+        transaction('28.02.24', '-700', 'Garage'),
+        transaction('29.02.24', '-900', 'Garage')
+      ], '29.02.2024'));
       // when
-      const result = A.yearlyExtras(data);
+      const result = A.yearlyExtras(data)[0];
       // then
-      assert.deepEqual(result.map(period => [period.year, period.complete, period.special, period.previous?.special]), [[2025, true, 0, 30000], [2024, true, 30000, undefined]]);
-    });
-
-    it('clamps leap-day comparison to the last day of February in the previous year', () => {
-      // given
-      const data = A.parseExport(csv([transaction('01.01.23', '-10'), transaction('28.02.23', '-300', 'Garage'), transaction('01.03.23', '-500', 'Garage')], '29.02.2024'));
-      // when
-      const result = A.yearlyExtras(data)[0].previous;
-      // then
-      assert.deepEqual(result, { start: A.parseDate('01.01.2023'), end: A.parseDate('01.03.2023'), extraIncome: 0, special: 30000 });
+      assert.deepEqual({
+        start: result.start, end: result.end, current: result.special,
+        previous: result.previous && [result.previous.start, result.previous.end, result.previous.special]
+      }, {
+        start: A.parseDate('02.03.2023'), end: A.parseDate('01.03.2024'), current: 210000,
+        previous: [A.parseDate('02.03.2022'), A.parseDate('02.03.2023'), 30000]
+      });
     });
   });
 

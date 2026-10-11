@@ -234,26 +234,16 @@ function trend(data) {
 }
 
 function yearlyExtras(data) {
-  const result = [];
-  const balanceDate = new Date(data.balanceDate);
-  const lastYear = balanceDate.getUTCFullYear();
-  const firstYear = new Date(Math.min(data.start, data.balanceDate)).getUTCFullYear();
-  for (let year = lastYear; year >= firstYear; year--) {
-    const start = Date.UTC(year, 0, 1);
-    const end = year === lastYear ? data.balanceDate + DAY : Date.UTC(year + 1, 0, 1);
-    const previousStart = Date.UTC(year - 1, 0, 1);
-    const lastDay = new Date(end - DAY);
-    const previousLastDay = Math.min(lastDay.getUTCDate(), new Date(Date.UTC(year - 1, lastDay.getUTCMonth() + 1, 0)).getUTCDate());
-    const previousEnd = Date.UTC(year - 1, lastDay.getUTCMonth(), previousLastDay) + DAY;
-    const current = summarize(data.transactions, { start, end });
-    const previous = data.start <= previousStart ? summarize(data.transactions, { start: previousStart, end: previousEnd }) : null;
-    result.push({
-      year, start: Math.max(start, Math.min(data.start, data.balanceDate)), end, complete: data.start <= start && end === Date.UTC(year + 1, 0, 1),
-      extraIncome: current.extraIncome, special: current.special,
-      previous: previous && { start: previousStart, end: previousEnd, extraIncome: previous.extraIncome, special: previous.special }
-    });
-  }
-  return result;
+  const end = data.balanceDate + DAY;
+  const start = end - 365 * DAY;
+  const previousStart = start - 365 * DAY;
+  const current = summarize(data.transactions, { start, end });
+  const previous = data.start <= previousStart ? summarize(data.transactions, { start: previousStart, end: start }) : null;
+  return [{
+    year: new Date(data.balanceDate).getUTCFullYear(), start, end, complete: data.start <= start,
+    extraIncome: current.extraIncome, special: current.special,
+    previous: previous && { start: previousStart, end: start, extraIncome: previous.extraIncome, special: previous.special }
+  }];
 }
 
 export { DAY, parseCSV, parseMoney, parseDate, parseExport, isExtra, balanceSeries, months, summarize, percentage, trend, yearlyExtras };

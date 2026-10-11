@@ -250,8 +250,8 @@ function renderInsights() {
     const previousLabel = previous && `${date(previous.start)} – ${date(previous.end - A.DAY)}`;
     const rows = [
       ['Period', `${date(period.start)} – ${date(period.end - A.DAY)}`],
-      ['Calculation', 'Calendar-year total'],
-      ['Coverage', period.complete ? 'Full year' : 'Partial year; only the dates shown'],
+      ['Calculation', 'Total over 365 days'],
+      ['Coverage', period.complete ? 'Full 365 days' : `Partial; export starts ${date(data.start)}`],
       ['Extras', `Non-recurring payments of ${money(15000)} or more`],
       ['Current total', money(period[key]), true]
     ];
