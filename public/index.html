@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>DKB Account Analyzer</title>
+  <link rel="stylesheet" href="styles.css">
+  <script type="module" src="app.js"></script>
+</head>
+<body>
+  <header class="masthead">
+    <div class="brand"><span class="brand-mark" aria-hidden="true">↗</span><h1>DKB Account Analyzer</h1></div>
+    <div class="header-actions"><span id="demo-badge" class="demo-badge" hidden>Demo data</span><span class="privacy">Browser only</span><label id="replace-file" class="button file-button" hidden>Open account export (CSV)<input id="replacement-input" type="file" accept=".csv,text/csv"></label></div>
+  </header>
+  <main>
+    <section id="drop-zone" class="import-panel" aria-labelledby="import-title">
+      <div class="landing-intro">
+        <h2 id="import-title">Understand your income and spending</h2>
+        <p>See how your account balance develops over time and whether your regular income covers your expenses. Compare monthly income and spending trends, separate one-off extras from regular payments, and inspect the transactions behind each month's totals.</p>
+        <p class="landing-demo"><a href="?demo=1">Explore the demo</a> with fictional account data.</p>
+      </div>
+      <div class="import-target">
+        <div><h3>Drop a CSV export of your DKB account here to analyze it.</h3><p>Data stays in your browser. Nothing is uploaded.</p></div>
+        <label class="button primary file-button">Open account export (CSV)<input id="file-input" type="file" accept=".csv,text/csv"></label>
+      </div>
+    </section>
+    <p id="error" class="notice error" role="alert" hidden></p>
+    <p id="import-status" role="status" class="muted small" hidden></p>
+
+    <div id="dashboard" hidden>
+      <section class="account-line" aria-label="Export information">
+        <div><span class="eyebrow">Account</span><p id="account"></p></div>
+        <div><span class="eyebrow">Range</span><p id="export-range"></p></div>
+      </section>
+      <section id="insights" class="panel" aria-labelledby="insights-title">
+        <div class="section-head"><h2 id="insights-title">Insights</h2></div>
+        <div class="insights-cards">
+          <div id="monthly-insights" class="insights-grid"></div>
+          <div id="extra-insights" class="insights-grid"></div>
+        </div>
+      </section>
+
+      <section class="panel" aria-labelledby="balance-title">
+        <div class="section-head"><div class="balance-heading"><h2 id="balance-title">Balance</h2><strong id="current-balance" aria-label="Current balance"></strong></div><div class="range-filter"><button id="range-button" type="button" aria-haspopup="dialog" aria-label="Change chart date range"></button><button id="clear-range" type="button" aria-label="Clear date range" hidden>×</button></div></div>
+        <div id="chart-wrap" class="chart-wrap"><svg id="balance-chart" role="img" tabindex="0" aria-label="Booked account balance over time"></svg></div>
+        <p id="chart-hint" class="muted small"></p>
+      </section>
+
+      <section id="trend" class="panel" aria-labelledby="trend-title">
+        <div class="section-head"><h2 id="trend-title">Trend</h2><span id="trend-basis" class="muted small"></span></div>
+        <div id="trend-summary" class="trend-summary"></div>
+      </section>
+
+      <section class="panel" aria-labelledby="analysis-title">
+        <div class="section-head"><h2 id="analysis-title">Monthly details</h2></div>
+        <p class="muted small">Booked transactions only · Extras: non-recurring amounts ≥ €150</p>
+        <div id="monthly-rows" class="months"></div>
+      </section>
+    </div>
+    <dialog id="range-dialog" class="range-dialog" aria-labelledby="range-dialog-title">
+      <form id="range-form" method="dialog">
+        <h2 id="range-dialog-title">Date range</h2>
+        <div class="range-fields"><label>From <input id="chart-from" type="date" required></label><label>To <input id="chart-to" type="date" required></label></div>
+        <p id="chart-error" class="notice error" role="alert" hidden></p>
+        <div class="dialog-actions"><button id="range-cancel" type="button" class="button">Cancel</button><button id="range-apply" type="submit" class="button primary">Apply</button></div>
+      </form>
+    </dialog>
+  </main>
+  <footer>Analyze your account balance in your browser · Not affiliated with <a href="https://www.dkb.de/">DKB</a></footer>
+</body>
+</html>

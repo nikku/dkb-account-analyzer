@@ -1,0 +1,22 @@
+{
+  "name": "dkb-account-analyzer",
+  "version": "0.0.0",
+  "description": "Offline, client-side DKB account balance and spending analysis",
+  "license": "MIT",
+  "author": "",
+  "type": "module",
+  "main": "./public/analyzer.js",
+  "exports": "./public/analyzer.js",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "dev": "sirv public --dev",
+    "test": "node --test test/*.test.js",
+    "test:watch": "node --test --watch test/*.test.js"
+  },
+  "devDependencies": {
+    "playwright": "^1.56.0",
+    "sirv-cli": "^3.0.1"
+  }
+}
