@@ -98,10 +98,10 @@ describe('Offline browser application', () => {
     // then
     assert.equal(result.landingVisible && result.dashboardHidden && result.picker === '.csv,text/csv' &&
       text.includes('See how your account balance develops over time') &&
-      text.includes('whether your regular income covers your expenses') &&
+      text.includes('whether regular income covers regular expenses') &&
+      text.includes('extra income and expenses affect your overall balance across the last 365 days') &&
       text.includes('Compare monthly income and spending trends') &&
-      text.includes('separate one-off extras from regular payments') &&
-      text.includes("inspect the transactions behind each month's totals") &&
+      text.includes('inspect the transactions behind each total') &&
       result.dropText.includes('Drop a CSV export of your DKB account here to analyze it.') &&
       result.dropText.includes('Data stays in your browser. Nothing is uploaded.') &&
       !text.includes('See where your money goes'), true);
