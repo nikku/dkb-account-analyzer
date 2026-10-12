@@ -135,6 +135,9 @@ async function importFile(file, demo = false) {
     bindHover(accountCode, 'Account', [['IBAN', iban]]);
     $('account').replaceChildren(`${accountName} · `, accountCode);
     $('export-range').textContent = `${date(data.start)} – ${date(data.balanceDate)}`;
+    $('print-report-account').textContent = data.account;
+    $('print-report-range').textContent = `Export period: ${date(data.start)} – ${date(data.balanceDate)}`;
+    $('print-report-balance').textContent = `Balance as of ${date(data.balanceDate)}: ${money(data.balance)}`;
     if ($('range-dialog').open) $('range-dialog').close();
     signed('current-balance', data.balance);
     bindHover($('current-balance'), 'Current balance', [['As of', date(data.balanceDate)], ['Balance', money(data.balance), true]]);

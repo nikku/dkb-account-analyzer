@@ -148,6 +148,7 @@ td { padding: 8px 10px; border-bottom: 1px solid #edf0ea; vertical-align: top; f
 .badge { display: inline-block; border-radius: 5px; padding: 3px 6px; margin: 5px 5px 0 0; background: #eef3ec; color: #53725c; font-size: 10px; }
 .badge.pending { background: #fff0d5; color: #80551d; }
 footer { max-width: 1248px; margin: 0 auto; padding: 20px 24px 35px; font-size: 11px; color: var(--muted); line-height: 1.7; }
+#print-report-header, #print-report-footer { display: none; }
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
 @media (max-width: 800px) {
   .insight strong { font-size: 22px; }
@@ -173,4 +174,24 @@ footer { max-width: 1248px; margin: 0 auto; padding: 20px 24px 35px; font-size: 
 }
 @media (prefers-reduced-motion: no-preference) {
   .button, .import-panel { transition: background .15s ease; }
+}
+@media print {
+  @page { margin: 14mm; }
+  :root { background: #fff; }
+  body { color: #000; background: #fff; font-size: 10pt; }
+  .masthead, #drop-zone, #error, #import-status, .account-line, .range-filter, #chart-hint, .hover-panel, .range-dialog, footer { display: none !important; }
+  main { max-width: none; margin: 0; padding: 0; }
+  #print-report-header { display: block; margin: 0 0 8mm; padding-bottom: 4mm; border-bottom: 1px solid #000; }
+  #print-report-header h1 { font-size: 18pt; }
+  #print-report-header p { margin: 1mm 0; }
+  #print-report-footer { display: block; margin: 5mm 0 0; color: #444; font-size: 9pt; }
+  .panel { margin: 0 0 8mm; padding: 0; border: 0; border-radius: 0; break-inside: avoid; }
+  .insight, .margin-summary, .month { break-inside: avoid; }
+  .insight, .margin-summary { background: #fff; border-color: #999; }
+  #balance-chart { height: 75mm; }
+  #monthly-details { break-before: page; }
+  .month > .month-breakdown { display: none !important; }
+  .month > summary::before, .balance-row > summary::before, .balance-row::before, .balance-row::after { display: none; }
+  .month-breakdown { margin-left: 0; padding-left: 0; }
+  .month > summary, .balance-row > summary { grid-template-columns: minmax(0, 1fr) 130px; padding-left: 0; }
 }

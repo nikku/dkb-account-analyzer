@@ -29,6 +29,12 @@
     <p id="import-status" role="status" class="muted small" hidden></p>
 
     <div id="dashboard" hidden>
+      <section id="print-report-header" aria-label="Printed report">
+        <h1>Account analysis</h1>
+        <p id="print-report-account"></p>
+        <p id="print-report-range"></p>
+        <p id="print-report-balance"></p>
+      </section>
       <section class="account-line" aria-label="Export information">
         <div><span class="eyebrow">Account</span><p id="account"></p></div>
         <div><span class="eyebrow">Range</span><p id="export-range"></p></div>
@@ -60,11 +66,12 @@
         <div id="trend-summary" class="trend-summary"></div>
       </section>
 
-      <section class="panel" aria-labelledby="analysis-title">
+      <section id="monthly-details" class="panel" aria-labelledby="analysis-title">
         <div class="section-head"><h2 id="analysis-title">Monthly details</h2></div>
         <p class="muted small">Booked transactions only · Extras: non-recurring amounts ≥ €150</p>
         <div id="monthly-rows" class="months"></div>
       </section>
+      <p id="print-report-footer">Generated with <a href="https://github.com/nikku/dkb-account-analyzer">DKB Account Analyzer</a>.</p>
     </div>
     <dialog id="range-dialog" class="range-dialog" aria-labelledby="range-dialog-title">
       <form id="range-form" method="dialog">

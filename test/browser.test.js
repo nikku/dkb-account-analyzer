@@ -129,6 +129,39 @@ describe('Offline browser application', () => {
     assert.deepEqual({ x: landing.x, width: landing.width }, { x: dashboard.x, width: dashboard.width });
   });
 
+  it('prints a report with full account identity and monthly details on a new page', async () => {
+    // given
+    await page.goto(`${url}?demo=1`);
+    await page.locator('#dashboard').waitFor({ state: 'visible' });
+    // when
+    await page.emulateMedia({ media: 'print' });
+    const result = await page.evaluate(() => ({
+      report: document.querySelector('#print-report-header').textContent,
+      masthead: getComputedStyle(document.querySelector('.masthead')).display,
+      controls: getComputedStyle(document.querySelector('.range-filter')).display,
+      accountLine: getComputedStyle(document.querySelector('.account-line')).display,
+      monthlyBreak: getComputedStyle(document.querySelector('#monthly-details')).breakBefore,
+      monthBreak: getComputedStyle(document.querySelector('.month')).breakInside,
+      transactionsVisible: document.querySelector('.sheet-transactions').getClientRects().length > 0,
+      breakdown: getComputedStyle(document.querySelector('.month-breakdown')).display,
+      source: document.querySelector('#print-report-footer').innerText,
+      sourceDisplay: getComputedStyle(document.querySelector('#print-report-footer')).display,
+      pageBackground: getComputedStyle(document.documentElement).backgroundColor
+    }));
+    // then
+    assert.equal(
+      result.report.includes('Account analysis') &&
+      result.report.includes('Girokonto · DE00XXXX00000000000000') &&
+      result.report.includes('Export period: 01 Nov 2024 – 31 Oct 2026') &&
+      result.report.includes('Balance as of 31 Oct 2026: 12.480,20') &&
+      result.masthead === 'none' && result.controls === 'none' && result.accountLine === 'none' &&
+      result.monthlyBreak === 'page' && result.monthBreak === 'avoid' &&
+      !result.transactionsVisible && result.breakdown === 'none' &&
+      result.source === 'Generated with DKB Account Analyzer.' && result.sourceDisplay === 'block' &&
+      result.pageBackground === 'rgb(255, 255, 255)', true
+    );
+  });
+
   it('explains the browser-only badge using the shared tooltip before import', async () => {
     // given
     const badge = page.locator('.privacy');
