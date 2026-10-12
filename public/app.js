@@ -172,6 +172,18 @@ function changeBadge(current, previous, higherIsGood, title, rows) {
   return [badge];
 }
 
+function percentageOf(value, total) {
+  return total === 0 ? null : value / total * 100;
+}
+
+function periodLabel(period) {
+  return `${date(period.start)} – ${date(period.end - A.DAY)}`;
+}
+
+function coverageLabel(period) {
+  return period.complete ? 'Full 365 days' : `Partial; export starts ${date(data.start)}`;
+}
+
 function coverage(period) {
   if (data.start > period.start) return `from ${shortDate.format(data.start)}`;
   if (data.balanceDate < period.end - A.DAY) return `to ${shortDate.format(data.balanceDate)}`;
@@ -229,7 +241,7 @@ function renderInsights() {
       ];
       const comparisonRows = [...rows, ['Compared with', previousLabel], ['Previous average', previous && money(previous[key]), true]];
       if (previous && previous[key] === 0) comparisonRows.push(['Percentage', current[key] === 0 ? 'No change; both amounts are zero' : 'Unavailable; previous average is zero']);
-      const title = key === 'income' ? 'Monthly income' : 'Monthly expenses';
+      const title = key === 'income' ? 'Income' : 'Expenses';
       bindHover(value, title, rows);
       value.append(node('strong', money(current[key])));
       const heading = node('div', undefined, 'insight-heading');
@@ -240,24 +252,24 @@ function renderInsights() {
   } else {
     $('monthly-insights').append(node('p', 'Monthly income and spending: no full month available.', 'muted small'));
   }
-  const period = A.yearlyExtras(data)[0];
+  const period = A.yearlyTotals(data)[0];
   $('extra-insights').replaceChildren(...['special', 'extraIncome'].map(key => {
     const item = node('div', undefined, 'insight');
     item.dataset.kind = key;
     item.dataset.year = String(period.year);
     const value = node('div', undefined, 'insight-value');
     const previous = period.previous;
-    const previousLabel = previous && `${date(previous.start)} – ${date(previous.end - A.DAY)}`;
+    const previousLabel = previous && periodLabel(previous);
     const rows = [
-      ['Period', `${date(period.start)} – ${date(period.end - A.DAY)}`],
+      ['Period', periodLabel(period)],
       ['Calculation', 'Total over 365 days'],
-      ['Coverage', period.complete ? 'Full 365 days' : `Partial; export starts ${date(data.start)}`],
+      ['Coverage', coverageLabel(period)],
       ['Extras', `Non-recurring payments of ${money(15000)} or more`],
       ['Current total', money(period[key]), true]
     ];
     const comparisonRows = [...rows, ['Compared with', previousLabel], ['Previous total', previous && money(previous[key]), true]];
     if (previous && previous[key] === 0) comparisonRows.push(['Percentage', period[key] === 0 ? 'No change; both amounts are zero' : 'Unavailable; previous total is zero']);
-    const title = key === 'extraIncome' ? 'Yearly extra income' : 'Yearly extra expenses';
+    const title = key === 'extraIncome' ? 'Extra income' : 'Extra expenses';
     bindHover(value, title, rows);
     value.append(node('strong', money(period[key])));
     const heading = node('div', undefined, 'insight-heading');
@@ -265,6 +277,103 @@ function renderInsights() {
     item.append(heading, value);
     return item;
   }));
+  const costOfLiving = period.regular + period.special;
+  const previousCostOfLiving = previous => previous.regular + previous.special;
+  const baselineMargin = period.income - period.regular;
+  const extrasBalance = period.extraIncome - period.special;
+  const totalIncome = period.income + period.extraIncome;
+  const totalMargin = baselineMargin + extrasBalance;
+  const totalMarginPercentage = percentageOf(totalMargin, totalIncome);
+  $('margin-insights').replaceChildren(marginSummary({
+    baselineMargin,
+    extrasBalance,
+    totalMargin,
+    totalMarginPercentage,
+    period,
+    costOfLiving,
+    totalIncome
+  }));
+  $('yearly-insights').replaceChildren(
+    yearlyInsight({
+      kind: 'costOfLiving',
+      title: 'Cost of living',
+      value: costOfLiving,
+      previous: period.previous && previousCostOfLiving(period.previous),
+      higherIsGood: false,
+      rows: [
+        ['Period', periodLabel(period)],
+        ['Calculation', 'Regular and extra expenses over 365 days'],
+        ['Coverage', coverageLabel(period)],
+        ['Regular expenses', money(period.regular), true],
+        ['Extra expenses', money(period.special), true],
+        ['Total cost of living', money(costOfLiving), true]
+      ],
+      previousLabel: period.previous && periodLabel(period.previous),
+      previousValueLabel: 'Previous cost of living'
+    })
+  );
+}
+
+function marginSummary({ baselineMargin, extrasBalance, totalMargin, totalMarginPercentage, period, costOfLiving, totalIncome }) {
+  const totalMonthly = Math.round(totalMargin / 12);
+  const totalRows = [
+    ['Period', periodLabel(period)],
+    ['Calculation', '(All income − all expenses) ÷ 12'],
+    ['Coverage', coverageLabel(period)],
+    ['Annual baseline margin', money(baselineMargin), true],
+    ['Annual extras balance', money(extrasBalance), true],
+    ['Annual total income margin', money(totalMargin), true],
+    ['Monthly total income margin', money(totalMonthly), true],
+    ['Total income margin', totalMarginPercentage === null ? 'Unavailable; total income is zero' : `${totalMarginPercentage > 0 ? '+' : ''}${totalMarginPercentage.toFixed(1)}%`]
+  ];
+  const summary = node('div', undefined, 'margin-summary');
+  summary.dataset.kind = 'totalIncomeMargin';
+  const primary = node('div', undefined, 'margin-primary');
+  bindHover(primary, 'Total income margin', totalRows);
+  const heading = node('div', undefined, 'insight-heading');
+  const rate = node('span', totalMarginPercentage === null ? 'N/A' : `${totalMarginPercentage > 0 ? '+' : ''}${totalMarginPercentage.toFixed(1)}% of income`, `margin-rate ${totalMargin < 0 ? 'negative' : totalMargin > 0 ? 'positive' : 'muted'}`);
+  bindHover(rate, 'Total income margin', totalRows);
+  heading.append(node('span', 'Total income margin', 'muted small'), rate);
+  primary.append(heading, node('strong', money(totalMonthly)), node('span', '/ month', 'insight-unit'));
+  const breakdown = node('div', undefined, 'margin-breakdown');
+  for (const [index, [label, value, rows]] of [
+    ['Baseline margin', baselineMargin, [
+      ['Period', periodLabel(period)], ['Calculation', '(Recurring income − regular expenses) ÷ 12'], ['Coverage', coverageLabel(period)],
+      ['Recurring income', money(period.income), true], ['Regular expenses', money(period.regular), true],
+      ['Annual baseline margin', money(baselineMargin), true], ['Monthly baseline margin', money(Math.round(baselineMargin / 12)), true]
+    ]],
+    ['Extras balance', extrasBalance, [
+      ['Period', periodLabel(period)], ['Calculation', '(Extra income − extra expenses) ÷ 12'], ['Coverage', coverageLabel(period)],
+      ['Extra income', money(period.extraIncome), true], ['Extra expenses', money(period.special), true],
+      ['Annual extras balance', money(extrasBalance), true], ['Monthly extras balance', money(Math.round(extrasBalance / 12)), true]
+    ]],
+    ['Total', totalMargin, totalRows]
+  ].entries()) {
+    const component = node('div', undefined, 'margin-component');
+    bindHover(component, label, rows);
+    const operator = index === 1 ? '+ ' : index === 2 ? '= ' : '';
+    component.append(node('span', `${operator}${label}`), node('strong', money(Math.round(value / 12)), value < 0 ? 'negative' : value > 0 ? 'positive' : ''));
+    breakdown.append(component);
+  }
+  summary.append(primary, breakdown);
+  return summary;
+}
+
+function yearlyInsight({ kind, title, value, previous, higherIsGood, rows, previousLabel, previousValueLabel }) {
+  const item = node('div', undefined, 'insight');
+  item.dataset.kind = kind;
+  const amount = node('div', undefined, 'insight-value');
+  bindHover(amount, title, rows);
+  amount.append(node('strong', money(value)));
+  const heading = node('div', undefined, 'insight-heading');
+  heading.append(node('span', title, 'muted small'));
+  if (previous != null) {
+    const comparisonRows = [...rows, ['Compared with', previousLabel], [previousValueLabel, money(previous), true]];
+    if (previous === 0) comparisonRows.push(['Percentage', value === 0 ? 'No change; both amounts are zero' : 'Unavailable; previous total is zero']);
+    heading.append(...changeBadge(value, previous, higherIsGood, title, comparisonRows));
+  }
+  item.append(heading, amount);
+  return item;
 }
 
 function renderTrend() {

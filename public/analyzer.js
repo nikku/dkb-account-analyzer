@@ -233,7 +233,7 @@ function trend(data) {
   return { window, points, current, previous, basis };
 }
 
-function yearlyExtras(data) {
+function yearlyTotals(data) {
   const end = data.balanceDate + DAY;
   const start = end - 365 * DAY;
   const previousStart = start - 365 * DAY;
@@ -241,9 +241,14 @@ function yearlyExtras(data) {
   const previous = data.start <= previousStart ? summarize(data.transactions, { start: previousStart, end: start }) : null;
   return [{
     year: new Date(data.balanceDate).getUTCFullYear(), start, end, complete: data.start <= start,
-    extraIncome: current.extraIncome, special: current.special,
-    previous: previous && { start: previousStart, end: start, extraIncome: previous.extraIncome, special: previous.special }
+    income: current.income, extraIncome: current.extraIncome, regular: current.regular, special: current.special,
+    previous: previous && {
+      start: previousStart, end: start,
+      income: previous.income, extraIncome: previous.extraIncome, regular: previous.regular, special: previous.special
+    }
   }];
 }
 
-export { DAY, parseCSV, parseMoney, parseDate, parseExport, isExtra, balanceSeries, months, summarize, percentage, trend, yearlyExtras };
+const yearlyExtras = yearlyTotals;
+
+export { DAY, parseCSV, parseMoney, parseDate, parseExport, isExtra, balanceSeries, months, summarize, percentage, trend, yearlyExtras, yearlyTotals };

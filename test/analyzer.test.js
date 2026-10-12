@@ -433,8 +433,8 @@ describe('Trend', () => {
       // then
       assert.deepEqual(result[0], {
         year: 2026, start: A.parseDate('11.10.2025'), end: A.parseDate('11.10.2026'), complete: true,
-        extraIncome: 50000, special: 135000,
-        previous: { start: A.parseDate('11.10.2024'), end: A.parseDate('11.10.2025'), extraIncome: 20000, special: 30000 }
+        income: 0, extraIncome: 50000, regular: 7000, special: 135000,
+        previous: { start: A.parseDate('11.10.2024'), end: A.parseDate('11.10.2025'), income: 0, extraIncome: 20000, regular: 16000, special: 30000 }
       });
     });
 

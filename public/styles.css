@@ -36,11 +36,24 @@ body.file-dragging::after { content: "Drop account CSV to import"; position: fix
 .account-line p { margin: 8px 0 0; font-size: 14px; overflow-wrap: anywhere; }
 .insights-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; }
 .insights-grid { display: contents; }
+.insight-section { margin-top: 20px; }
+.insight-section-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 16px; margin: 0 0 10px; }
+.insight-section-head h3 { margin: 0; font-size: 14px; }
+.insight-section-head span { color: var(--muted); font-size: 11px; }
 .insight { display: flex; flex-direction: column; justify-content: center; gap: 4px; min-width: 0; padding: 12px 16px; border: 1px solid var(--line); border-radius: 8px; background: #f6f9f5; }
 .insight-heading { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: baseline; gap: 8px; }
 .insight strong { font-size: 26px; font-weight: 650; letter-spacing: -.8px; font-variant-numeric: tabular-nums; }
 .insight-value { text-align: right; }
 .insight-value > strong { white-space: nowrap; }
+.insight-unit { display: block; margin-top: 2px; color: var(--muted); font-size: 11px; }
+.margin-summary { display: grid; grid-template-columns: minmax(210px, .9fr) minmax(260px, 1.1fr); gap: 20px; align-items: center; padding: 18px 20px; border: 1px solid #c9d8cd; border-radius: 10px; background: #f1f7f1; }
+.margin-primary { text-align: left; }
+.margin-primary strong { display: block; font-size: 32px; }
+.margin-breakdown { display: grid; gap: 6px; }
+.margin-component { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; align-items: baseline; padding-top: 6px; border-top: 1px solid #dbe7dc; color: var(--muted); font-size: 12px; }
+.margin-component:first-child { border-top: 0; padding-top: 0; }
+.margin-component strong { color: var(--ink); font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.margin-component strong.positive, .margin-component strong.negative { color: inherit; }
 .insight strong, .balance-amount, .change, #current-balance, .transaction-table td:last-child { font-variant-numeric: tabular-nums; text-align: right; }
 .iban-chip { display: inline-block; max-width: 100%; padding: 3px 7px; background: #eaf0e9; border: 1px solid var(--line); border-radius: 5px; font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: 12px; overflow-wrap: anywhere; }
 [data-hover]:focus-visible, .trend-spark:focus-visible, #balance-chart:focus-visible { outline: 2px solid var(--green); outline-offset: 3px; }
@@ -118,7 +131,7 @@ td { padding: 8px 10px; border-bottom: 1px solid #edf0ea; vertical-align: top; f
 .month > summary:focus-visible, .balance-row > summary:focus-visible { outline: 2px solid var(--green); outline-offset: -2px; }
 .month-label, .balance-label { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; min-width: 0; }
 .month-label .badge { margin: 0; }
-.change { font-size: 11px; font-weight: 500; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.change, .margin-rate { font-size: 11px; font-weight: 500; font-variant-numeric: tabular-nums; white-space: nowrap; }
 .month-breakdown { display: grid; margin: 0 0 8px 16px; padding-left: 24px; }
 .balance-row { position: relative; display: flow-root; }
 .balance-row[open] { padding-bottom: 8px; }
@@ -138,6 +151,8 @@ footer { max-width: 1248px; margin: 0 auto; padding: 20px 24px 35px; font-size: 
 .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
 @media (max-width: 800px) {
   .insight strong { font-size: 22px; }
+  .margin-summary { grid-template-columns: 1fr; gap: 16px; }
+  .margin-primary strong { font-size: 28px; }
   .trend-summary { grid-template-columns: 1fr; }
   .masthead { padding: 20px; }
   .masthead { flex-wrap: wrap; }

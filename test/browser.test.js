@@ -359,7 +359,7 @@ describe('Offline browser application', () => {
     // then
     assert.deepEqual({ ...result, errors }, {
       basis: 'Rolling 3-month average', changes: [['+7.0%', 'change negative'], ['+3.8%', 'change positive']],
-      periods: ['Aug 26 – Oct 26', 'Aug 26 – Oct 26'], comparison: 'Monthly expenses',
+      periods: ['Aug 26 – Oct 26', 'Aug 26 – Oct 26'], comparison: 'Expenses',
       graphNumbers: 0, lines: 3, errors: []
     });
   });
@@ -388,7 +388,7 @@ describe('Offline browser application', () => {
     // then
     assert.deepEqual(result, {
       period: '01 Nov 2025 – 31 Oct 2026', calculation: 'Total over 365 days', coverage: 'Full 365 days',
-      label: 'Yearly extra expenses', income: '1.840,00 €', expense: '3.513,00 €',
+      label: 'Extra expenses', income: '1.840,00 €', expense: '3.513,00 €',
       changes: ['+1.5%', '+60.0%'], comparedWith: '01 Nov 2024 – 31 Oct 2025', figures: 2, tables: 0
     });
   });
@@ -414,6 +414,59 @@ describe('Offline browser application', () => {
     });
   });
 
+  it('reconciles baseline margin, extras balance and total income margin from rolling yearly totals', async () => {
+    // given
+    await page.goto(`${url}?demo=1`);
+    await page.locator('#yearly-insights .insight').first().waitFor();
+    // when
+    const result = await page.evaluate(() => {
+      const cost = document.querySelector('#yearly-insights [data-kind="costOfLiving"]');
+      const costHover = JSON.parse(cost.querySelector('.insight-value').dataset.hover);
+      const costComparison = JSON.parse(cost.querySelector('.change').dataset.hover);
+      const margin = document.querySelector('#margin-insights [data-kind="totalIncomeMargin"]');
+      const components = Array.from(margin.querySelectorAll('.margin-component'), component => ({
+        label: component.querySelector('span').textContent,
+        amount: component.querySelector('strong').textContent,
+        calculation: JSON.parse(component.dataset.hover).rows.find(row => row[0] === 'Calculation')[1]
+      }));
+      const totalRows = JSON.parse(margin.querySelector('.margin-primary').dataset.hover).rows;
+      return {
+        cost: cost.querySelector('strong').textContent,
+        costChange: cost.querySelector('.change').textContent,
+        costCalculation: costHover.rows.find(row => row[0] === 'Calculation')[1],
+        previousCost: costComparison.rows.find(row => row[0] === 'Previous cost of living')[1],
+        total: margin.querySelector('.margin-primary strong').textContent,
+        totalUnit: margin.querySelector('.margin-primary .insight-unit').textContent,
+        totalPercentage: margin.querySelector('.margin-primary .margin-rate').textContent,
+        components,
+        totalRows
+      };
+    });
+    await page.locator('#margin-insights .margin-primary').focus();
+    result.totalTooltipFits = await page.locator('#hover-panel').evaluate(panel => panel.scrollHeight <= panel.clientHeight);
+    // then
+    assert.deepEqual(result, {
+      cost: '29.139,71 €', costChange: '+3.6%', costCalculation: 'Regular and extra expenses over 365 days', previousCost: '28.126,64 €',
+      total: '458,36 €', totalUnit: '/ month', totalPercentage: '+15.9% of income',
+      components: [
+        { label: 'Baseline margin', amount: '597,77 €', calculation: '(Recurring income − regular expenses) ÷ 12' },
+        { label: '+ Extras balance', amount: '-139,42 €', calculation: '(Extra income − extra expenses) ÷ 12' },
+        { label: '= Total', amount: '458,36 €', calculation: '(All income − all expenses) ÷ 12' }
+      ],
+      totalRows: [
+        ['Period', '01 Nov 2025 – 31 Oct 2026'],
+        ['Calculation', '(All income − all expenses) ÷ 12'],
+        ['Coverage', 'Full 365 days'],
+        ['Annual baseline margin', '7.173,29 €', true],
+        ['Annual extras balance', '-1.673,00 €', true],
+        ['Annual total income margin', '5.500,29 €', true],
+        ['Monthly total income margin', '458,36 €', true],
+        ['Total income margin', '+15.9%']
+      ],
+      totalTooltipFits: true
+    });
+  });
+
   it('keeps yearly insights within a mobile viewport', async () => {
     // given
     await page.setViewportSize({ width: 390, height: 900 });
@@ -428,18 +481,23 @@ describe('Offline browser application', () => {
     assert.deepEqual({ ...result, errors }, { fits: true, figures: 2, errors: [] });
   });
 
-  it('renders four distinct insight cards with the simplified monthly expenses label', async () => {
+  it('groups five supporting insight cards beneath the monthly and yearly headings', async () => {
     // given
     await page.goto(`${url}?demo=1`);
     await page.locator('#extra-insights .insight').first().waitFor();
     // when
     const result = await page.evaluate(() => ({
       labels: Array.from(document.querySelectorAll('.insights-cards .insight'), item => item.querySelector('.insight-heading > span').textContent),
+      sections: Array.from(document.querySelectorAll('.insight-section-head'), heading => [heading.querySelector('h3').textContent, heading.querySelector('span')?.textContent ?? null]),
       bordered: Array.from(document.querySelectorAll('.insights-cards .insight')).every(item => getComputedStyle(item).borderTopStyle === 'solid' && parseFloat(getComputedStyle(item).paddingTop) > 0),
       layout: getComputedStyle(document.querySelector('.insights-cards')).display
     }));
     // then
-    assert.deepEqual(result, { labels: ['Monthly expenses', 'Monthly income', 'Yearly extra expenses', 'Yearly extra income'], bordered: true, layout: 'grid' });
+    assert.deepEqual(result, {
+      labels: ['Expenses', 'Income', 'Extra expenses', 'Extra income', 'Cost of living'],
+      sections: [['Monthly budget', 'Rolling 3-month average · extras excluded'], ['Last 365 days', null]],
+      bordered: true, layout: 'grid'
+    });
   });
 
   it('keeps monthly tooltip titles simple and explains excluded extras in calculation rows', async () => {
@@ -454,8 +512,8 @@ describe('Offline browser application', () => {
       heading: hover.heading,
       calculation: hover.rows.find(row => row[0] === 'Calculation')[1]
     })), [
-      { heading: 'Monthly expenses', calculation: 'Average of 3 full months; extras excluded' },
-      { heading: 'Monthly income', calculation: 'Average of 3 full months; extras excluded' }
+      { heading: 'Expenses', calculation: 'Average of 3 full months; extras excluded' },
+      { heading: 'Income', calculation: 'Average of 3 full months; extras excluded' }
     ]);
   });
 
@@ -464,7 +522,7 @@ describe('Offline browser application', () => {
     await page.goto(`${url}?demo=1`);
     await page.locator('#extra-insights .change').first().waitFor();
     // when
-    const aligned = await page.evaluate(() => Array.from(document.querySelectorAll('.insight')).every(item => {
+    const aligned = await page.evaluate(() => Array.from(document.querySelectorAll('.insight')).filter(item => item.querySelector('.change')).every(item => {
       const change = item.querySelector('.change').getBoundingClientRect();
       const amount = item.querySelector('strong').getBoundingClientRect();
       return change.bottom <= amount.top && Math.abs(change.right - amount.right) < 1;
@@ -492,15 +550,16 @@ describe('Offline browser application', () => {
     const cards = await page.locator('.insights-cards .insight').evaluateAll(items => items.map(item => ({
       label: item.querySelector('.insight-heading > span').textContent,
       amountTitle: JSON.parse(item.querySelector('.insight-value').dataset.hover).heading,
-      comparisonTitle: JSON.parse(item.querySelector('.change').dataset.hover).heading,
       amount: JSON.parse(item.querySelector('.insight-value').dataset.hover).rows,
-      comparison: JSON.parse(item.querySelector('.change').dataset.hover).rows
+      comparison: item.querySelector('.change') && JSON.parse(item.querySelector('.change').dataset.hover).rows,
+      rate: item.querySelector('.margin-rate')?.textContent
     })));
     // then
-    assert.equal(cards.length === 4 && cards.every(card =>
-      card.label === card.amountTitle && card.label === card.comparisonTitle &&
+    const comparisons = cards.filter(card => card.comparison);
+    assert.equal(cards.length === 5 && comparisons.length === 5 && comparisons.every(card =>
+      card.label === card.amountTitle &&
       ['Period', 'Calculation'].every(label => card.amount.some(row => row[0] === label)) &&
-      card.amount.some(row => row[0].startsWith('Current')) &&
+      card.amount.some(row => row[0].startsWith('Current') || row[0] === 'Total cost of living') &&
       !card.amount.some(row => ['Compared with', 'Difference'].includes(row[0]) || row[0].startsWith('Previous')) &&
       ['Compared with', 'Difference'].every(label => card.comparison.some(row => row[0] === label)) &&
       card.comparison.some(row => row[0].startsWith('Previous'))
@@ -530,7 +589,7 @@ describe('Offline browser application', () => {
     // then
     assert.deepEqual({ ...result, numericAlignment, heading, dismissed }, {
       panels: 1, nativeTooltips: 0, iban: 'DE00XXXX00000000000000', describedBy: 'hover-panel',
-      amountAlignment: 'right', numericAlignment: 'right', heading: 'Monthly expenses', dismissed: true
+      amountAlignment: 'right', numericAlignment: 'right', heading: 'Expenses', dismissed: true
     });
   });
 
@@ -551,7 +610,7 @@ describe('Offline browser application', () => {
       await touchPage.locator('#insights-title').tap();
       const dismissed = await touchPage.locator('#hover-panel').isHidden();
       // then
-      assert.deepEqual({ opened, heading, comparisonHeading, dismissed }, { opened: true, heading: 'Monthly income', comparisonHeading: 'Monthly income', dismissed: true });
+      assert.deepEqual({ opened, heading, comparisonHeading, dismissed }, { opened: true, heading: 'Income', comparisonHeading: 'Income', dismissed: true });
     } finally {
       await touchContext.close();
     }

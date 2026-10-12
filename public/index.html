@@ -35,10 +35,18 @@
       </section>
       <section id="insights" class="panel" aria-labelledby="insights-title">
         <div class="section-head"><h2 id="insights-title">Insights</h2></div>
-        <div class="insights-cards">
-          <div id="monthly-insights" class="insights-grid"></div>
-          <div id="extra-insights" class="insights-grid"></div>
-        </div>
+        <div id="margin-insights"></div>
+        <section class="insight-section" aria-labelledby="monthly-insights-title">
+          <div class="insight-section-head"><h3 id="monthly-insights-title">Monthly budget</h3><span>Rolling 3-month average · extras excluded</span></div>
+          <div id="monthly-insights" class="insights-cards"></div>
+        </section>
+        <section class="insight-section" aria-labelledby="yearly-insights-title">
+          <div class="insight-section-head"><h3 id="yearly-insights-title">Last 365 days</h3></div>
+          <div class="insights-cards">
+            <div id="extra-insights" class="insights-grid"></div>
+            <div id="yearly-insights" class="insights-grid"></div>
+          </div>
+        </section>
       </section>
 
       <section class="panel" aria-labelledby="balance-title">
